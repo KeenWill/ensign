@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+lb config noauto \
+	--mode debian \
+	--architectures amd64 \
+	--linux-flavours amd64 \
+	--debian-installer false \
+	--archive-areas "main contrib non-free" \
+	--apt-indices false \
+	--memtest none \
+	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
+	"${@}"
