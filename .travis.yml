@@ -17,5 +17,5 @@ deploy:
   file: live-image-amd64.hybrid.iso
   on:
     repo: KeenWill/ensign
-    tags: true
+    #tags: true
     all_branches: true
