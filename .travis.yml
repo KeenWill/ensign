@@ -3,14 +3,16 @@ sudo: required
 services:
 - docker
 before_install:
+- openssl aes-256-cbc -K $encrypted_f415018e36c0_key -iv $encrypted_f415018e36c0_iv
+  -in ./travis/travis_github_deploy_key.enc -out travis_github_deploy_key -d
 - docker build -t ensign .
 script:
 - docker run --privileged --name=ensign ensign
 - docker container cp ensign:/opt/live/live-image-amd64.hybrid.iso ./
-after_install:
+after_install: 
 deploy:
   provider: releases
-  file: build.sh
+  file: live-image-amd64.hybrid.iso
   on:
     repo: KeenWill/ensign
     all_branches: true
