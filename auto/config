@@ -14,5 +14,6 @@ lb config noauto \
 	--iso-volume "Ensign Live" \
 	--firmware-binary true \
 	--firmware-chroot true \
+	--initsystem systemd \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
 	"${@}"
