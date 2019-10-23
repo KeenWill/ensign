@@ -8,7 +8,7 @@ before_install:
 #- docker build -t ensign .
 - sudo apt-get update && sudo apt-get install -y git live-build curl coreutils vim
 - sudo mkdir -p /opt/live
-- sudo cp * /opt/live
+- sudo cp -r * /opt/live
 script:
 #- docker run --privileged --name=ensign ensign
 #- docker container cp ensign:/opt/live/live-image-amd64.hybrid.iso ./
