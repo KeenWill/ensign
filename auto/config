@@ -8,5 +8,6 @@ lb config noauto \
 	--archive-areas "main contrib non-free" \
 	--apt-indices false \
 	--memtest none \
+	--bootappend-live "boot=live components username=root hostname=ensign" \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
 	"${@}"
