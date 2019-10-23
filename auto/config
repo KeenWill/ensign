@@ -12,5 +12,7 @@ lb config noauto \
 	--iso-application "Ensign Linux" \
 	--iso-publisher "Ensign" \
 	--iso-volume "Ensign Live" \
+	--firmware-binary true \
+	--firmware-chroot true \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
 	"${@}"
