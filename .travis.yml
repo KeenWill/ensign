@@ -6,13 +6,13 @@ before_install:
 #- openssl aes-256-cbc -K $encrypted_f415018e36c0_key -iv $encrypted_f415018e36c0_iv
 #  -in ./travis/travis_github_deploy_key.enc -out travis_github_deploy_key -d
 #- docker build -t ensign .
-- apt-get update && apt-get install -y git live-build curl coreutils vim
-- mkdir -p /opt/live
-- cp * /opt/live
+- sudo apt-get update && sudo apt-get install -y git live-build curl coreutils vim
+- sudo mkdir -p /opt/live
+- sudo cp * /opt/live
 script:
 #- docker run --privileged --name=ensign ensign
 #- docker container cp ensign:/opt/live/live-image-amd64.hybrid.iso ./
-- /opt/live/build.sh
+- sudo /opt/live/build.sh
 after_install: 
 deploy:
   provider: releases
