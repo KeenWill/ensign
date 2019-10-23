@@ -1,18 +1,18 @@
 language: shell
 sudo: required
-#services:
-#- docker
+services:
+- docker
 before_install:
 #- openssl aes-256-cbc -K $encrypted_f415018e36c0_key -iv $encrypted_f415018e36c0_iv
 #  -in ./travis/travis_github_deploy_key.enc -out travis_github_deploy_key -d
-#- docker build -t ensign .
-- sudo apt-get update && sudo apt-get install -y git live-build curl coreutils vim
-- sudo mkdir -p /opt/live
-- sudo cp -r * /opt/live
+- docker build -t ensign .
+#- sudo apt-get update && sudo apt-get install -y git live-build curl coreutils vim
+#- sudo mkdir -p /opt/live
+#- sudo cp -r * /opt/live
 script:
-#- docker run --privileged --name=ensign ensign
-#- docker container cp ensign:/opt/live/live-image-amd64.hybrid.iso ./
-- sudo /opt/live/build.sh
+- docker run --privileged --cap-add SYS_ADMIN --name=ensign ensign
+- docker container cp ensign:/opt/live/live-image-amd64.hybrid.iso ./
+#- sudo /opt/live/build.sh
 after_install: 
 deploy:
   provider: releases
