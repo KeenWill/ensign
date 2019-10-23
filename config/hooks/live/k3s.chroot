@@ -85,18 +85,7 @@ fatal()
     exit 1
 }
 
-# --- fatal if no systemd or openrc ---
-#verify_system() {
-#    if [ -x /sbin/openrc-run ]; then
-#        HAS_OPENRC=true
-#        return
-#    fi
-#    if [ -d /run/systemd ]; then
-#        HAS_SYSTEMD=true
-#        return
-#    fi
-#    fatal 'Can not find systemd or openrc to use as a process supervisor for k3s'
-#}
+HAS_SYSTEMD=true
 
 # --- add quotes to command arguments ---
 quote() {
