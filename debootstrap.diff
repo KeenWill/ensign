@@ -1,0 +1,11 @@
+--- /usr/share/debootstrap/scripts/debian-common
++++ /usr/share/debootstrap/scripts/debian-common
+@@ -101,7 +101,7 @@ Status: install ok installed" >> "$TARGET/var/lib/dpkg/status"
+ 		baseprog="$(($baseprog + ${1:-1}))"
+ 	}
+ 
+-	if ! doing_variant fakechroot; then
++	if ! doing_variant fakechroot && [ "$CONTAINER" != "docker" ]; then
+ 		setup_proc
+ 		in_target /sbin/ldconfig
+ 	fi
