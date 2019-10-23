@@ -91,22 +91,7 @@ setup_tmp() {
 
 # --- download from github url ---
 download() {
-    [ $# -eq 2 ] || fatal 'download needs exactly 2 arguments'
-
-    case $DOWNLOADER in
-        curl)
-            curl -o $1 -sfL $2
-            ;;
-        wget)
-            wget -qO $1 $2
-            ;;
-        *)
-            fatal "Incorrect executable '$DOWNLOADER'"
-            ;;
-    esac
-
-    # Abort if download command failed
-    [ $? -eq 0 ] || fatal 'Download failed'
+    curl -o $1 -sfL $2
 }
 
 # --- download hash from github url ---
@@ -382,7 +367,6 @@ eval set -- $(escape "${INSTALL_K3S_EXEC}") $(quote "$@")
     create_systemd_service_file
     service_enable_and_start
 }
-
 
 echo "End of k3s.chroot"
 set +x
