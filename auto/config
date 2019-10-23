@@ -9,5 +9,8 @@ lb config noauto \
 	--apt-indices false \
 	--memtest none \
 	--bootappend-live "boot=live components username=root hostname=ensign" \
+	--iso-application "Ensign Linux" \
+	--iso-publisher "Ensign" \
+	--iso-volume "Ensign Live" \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
 	"${@}"
