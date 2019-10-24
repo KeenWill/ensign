@@ -19,6 +19,7 @@ deploy:
   file: live-image-amd64.hybrid.iso
   username: KeenWill
   overwrite: true
+  skip_cleanup: true
   on:
     repo: KeenWill/ensign
     #tags: true
