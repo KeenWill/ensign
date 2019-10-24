@@ -7,13 +7,13 @@ lb config noauto \
 	--debian-installer false \
 	--archive-areas "main contrib non-free" \
 	--apt-indices false \
-	--apt-recommends false
+	--apt-recommends false \
 	--memtest none \
 	--bootappend-live "boot=live components username=root hostname=ensign" \
 	--iso-application "Ensign Linux" \
 	--iso-publisher "Ensign" \
 	--iso-volume "Ensign Live" \
-	--debootstrap-options "--variant=minbase"
+	--debootstrap-options "--variant=minbase" \
 	--firmware-chroot false \
 	--initsystem systemd \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
