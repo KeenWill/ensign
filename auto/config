@@ -11,7 +11,7 @@ lb config noauto \
 	--memtest none \
 	--bootappend-live "boot=live components username=root hostname=ensign" \
 	--iso-application "Ensign Linux" \
-	--iso-publisher "Ensign" \
+	--iso-publisher "William Goeller" \
 	--iso-volume "Ensign Live" \
 	--debootstrap-options "--variant=minbase" \
 	--firmware-chroot false \
