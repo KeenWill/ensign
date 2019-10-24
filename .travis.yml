@@ -3,8 +3,6 @@ sudo: required
 services:
 - docker
 before_install:
-#- openssl aes-256-cbc -K $encrypted_f415018e36c0_key -iv $encrypted_f415018e36c0_iv
-#  -in ./travis/travis_github_deploy_key.enc -out travis_github_deploy_key -d
 - docker build -t ensign .
 script:
 - docker run --privileged --name=ensign ensign
@@ -13,9 +11,7 @@ after_install:
 deploy:
   provider: releases
   api_key:
-    secure: GNTr2FLGXr2zsAZqEx75OCs9SnsKHVGLGCODgGWUYHpv6LtPxYHWDFbcDH7vXzc3D7kuJpd/6dnZ0dI37SSvnEFxFQxL2aChoDYqQTc4RnpNti9yO7aQv4p0tcXImot0MakvKyOxtU+BCKrp/aMYpPk1abrrapvy312tXqnVqu1K4/M+pS5lGMowMtisCUB552k5XJi1I4Yxr44PoT8J705yZZeJ9Z8n24RiPbl7gNYp7SHQHACZ2Yntqayppfoze1P/tiNQ13TUSWdiQMXh7b3aDJG3P/VOzehCsP7g7/3wVVRO1XWphZlAHJeZZJ+2d5ysKtwHxkrWBjWa1MVHYbZ6ubMpM/Xg5WuHluDZDbE1DYe3yKsNoSUP8xjvTjTsCCviMjJtvIM2SAGjeR8aNImMMnJgNnyfEt/Iknof4EAjp6aEx0kWJLpFhUS+7sWZOP3c7E6MKa98S6i+ZgqiOgfm8SSMfshPMYJJ74bq7YluSsZ4Ek5EwgCQEfJT3WNa4E60eY02vTbcsohqA+7WaSq0sJov8Ei+gMR8oCUqzhavK0Hyqd+/RLp/vWAzs4GBum46cahgZ69wKRq/d7Umw4HRrAgASmzs2keHAG50By04t4gwvhwWjmUl1FqhppHytgnRbNx3Qw5kafAriQbnzl7mvNya7bF9lQR4u4RzrC4=
+    secure: PLb25e9D0SG/FalwtHBkV0mtKHHddGqTDjcRzLYmjDFK8t71mdDUByw5zugEMOu2kV1Z9TrsXLul8dRB7zW6ouVnOVxAc7GlOpbu7h1ganj+9s2mRWkMqRFeIhiRoStN7TIMcVRGg6WD1Z1ty+0aOKTvCKaFyds0TxbwMIIHscL/JzB8V9vBGdXS+I+25VggdGfhhfl626ri3UXWtib+CKmvKl9uWhHL2V6bKrNkH4UYaQbZogzGgWlETnd9UKCNYXtcU45UJxtlKh58WlANIPZ5L+LCIO3hn2p6H9TVDTuG9fXoNivLS9nRfYKyT7FPOJRH4tOCU14xcBjIJBurNz0gxq5A58hm+qxISSP8p1Umh2pNy23illfL0v94TGyhP1Qb2vm90M5gg9uXe53xgSMUY/13DNJDDahGLBV6Uaaby1F6SWGi0bu/sJmKvTmGSqi/CoU5gvwdmVQi12nSWRnZGCELzlRzKFg/PVP+MuLzRFIhZX+gX3C5ouThlHAVkt4Tb8akpRBXH6WrFGYwobStrCbnjjjQVVo2oC0fWwAPBwO+es6Hop/OerYIDdCKwCWc96u2Y/C5wDWrPWyBo4RbEFwLamymEcY6I+OYKr18gZiJmbr+7cYOhPhwpFO0wvzgkOOu9B+iUOjfwKTiRrvjCjGD2SLEAG7Ge5VyhwU=
   file: live-image-amd64.hybrid.iso
   on:
     repo: KeenWill/ensign
-    tags: true
-    all_branches: true
