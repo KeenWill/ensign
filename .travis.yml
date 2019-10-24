@@ -17,6 +17,7 @@ deploy:
   api_key:
     secure: PLb25e9D0SG/FalwtHBkV0mtKHHddGqTDjcRzLYmjDFK8t71mdDUByw5zugEMOu2kV1Z9TrsXLul8dRB7zW6ouVnOVxAc7GlOpbu7h1ganj+9s2mRWkMqRFeIhiRoStN7TIMcVRGg6WD1Z1ty+0aOKTvCKaFyds0TxbwMIIHscL/JzB8V9vBGdXS+I+25VggdGfhhfl626ri3UXWtib+CKmvKl9uWhHL2V6bKrNkH4UYaQbZogzGgWlETnd9UKCNYXtcU45UJxtlKh58WlANIPZ5L+LCIO3hn2p6H9TVDTuG9fXoNivLS9nRfYKyT7FPOJRH4tOCU14xcBjIJBurNz0gxq5A58hm+qxISSP8p1Umh2pNy23illfL0v94TGyhP1Qb2vm90M5gg9uXe53xgSMUY/13DNJDDahGLBV6Uaaby1F6SWGi0bu/sJmKvTmGSqi/CoU5gvwdmVQi12nSWRnZGCELzlRzKFg/PVP+MuLzRFIhZX+gX3C5ouThlHAVkt4Tb8akpRBXH6WrFGYwobStrCbnjjjQVVo2oC0fWwAPBwO+es6Hop/OerYIDdCKwCWc96u2Y/C5wDWrPWyBo4RbEFwLamymEcY6I+OYKr18gZiJmbr+7cYOhPhwpFO0wvzgkOOu9B+iUOjfwKTiRrvjCjGD2SLEAG7Ge5VyhwU=
   file: live-image-amd64.hybrid.iso
+  username: KeenWill
   on:
     repo: KeenWill/ensign
     #tags: true
