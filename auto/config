@@ -8,5 +8,12 @@ lb config noauto \
 	--archive-areas "main contrib non-free" \
 	--apt-indices false \
 	--memtest none \
+	--bootappend-live "boot=live components username=root hostname=ensign" \
+	--iso-application "Ensign Linux" \
+	--iso-publisher "Ensign" \
+	--iso-volume "Ensign Live" \
+	--firmware-binary true \
+	--firmware-chroot true \
+	--initsystem systemd \
 	#--bootappend-live "boot=live components persistence persistence-encryption=luks"
 	"${@}"
