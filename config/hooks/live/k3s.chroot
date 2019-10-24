@@ -1,0 +1,372 @@
+#!/bin/bash
+set -x
+echo "Running k3s.chroot"
+
+ARCH=amd64
+SUFFIX=
+
+GITHUB_URL=https://github.com/rancher/k3s/releases
+DOWNLOADER=
+
+# --- helper functions for logs ---
+info()
+{
+    echo '[INFO K3S INSTALL] ' "$@"
+}
+fatal()
+{
+    echo '[ERROR K3S INSTALL] ' "$@" >&2
+    exit 1
+}
+
+# --- add quotes to command arguments ---
+quote() {
+    for arg in "$@"; do
+        printf '%s\n' "$arg" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"
+    done
+}
+
+# --- add indentation and trailing slash to quoted args ---
+quote_indent() {
+    printf ' \\\n'
+    for arg in "$@"; do
+        printf '\t%s \\\n' "$(quote "$arg")"
+    done
+}
+
+# --- escape most punctuation characters, except quotes, forward slash, and space ---
+escape() {
+    printf '%s' "$@" | sed -e 's/\([][!#$%&()*;<=>?\_`{|}]\)/\\\1/g;'
+}
+
+# --- escape double quotes ---
+escape_dq() {
+    printf '%s' "$@" | sed -e 's/"/\\"/g'
+}
+
+# --- define needed environment variables ---
+setup_env() {
+    CMD_K3S=agent
+    CMD_K3S_EXEC="${CMD_K3S}$(quote_indent "$@")"
+    SYSTEM_NAME=k3s-ensign
+    SERVICE_K3S=k3s-ensign.service
+    UNINSTALL_K3S_SH=k3s-ensign-uninstall.sh
+    KILLALL_K3S_SH=k3s-killall.sh    
+    SYSTEMD_TYPE=exec
+    BIN_DIR=/usr/local/bin # binary directory
+    SYSTEMD_DIR=/etc/systemd/system # systemd directory
+    FILE_K3S_SERVICE=${SYSTEMD_DIR}/${SERVICE_K3S}
+    FILE_K3S_ENV=${SYSTEMD_DIR}/${SERVICE_K3S}.env
+    PRE_INSTALL_HASHES=$(get_installed_hashes) # get hash of config & exec for currently installed k3s
+}
+
+# --- check if skip download environment variable set ---
+can_skip_download() {
+    if [ "${INSTALL_K3S_SKIP_DOWNLOAD}" != true ]; then
+        return 1
+    fi
+}
+
+# --- verify an executabe k3s binary is installed ---
+verify_k3s_is_executable() {
+    if [ ! -x ${BIN_DIR}/k3s ]; then
+        fatal "Executable k3s binary not found at ${BIN_DIR}/k3s"
+    fi
+}
+
+# --- create tempory directory and cleanup when done ---
+setup_tmp() {
+    TMP_DIR=$(mktemp -d -t k3s-install.XXXXXXXXXX)
+    TMP_HASH=${TMP_DIR}/k3s.hash
+    TMP_BIN=${TMP_DIR}/k3s.bin
+    cleanup() {
+        code=$?
+        set +e
+        trap - EXIT
+        rm -rf ${TMP_DIR}
+        exit $code
+    }
+    trap cleanup INT EXIT
+}
+
+# --- download from github url ---
+download() {
+    curl -o $1 -sfL $2
+}
+
+# --- download hash from github url ---
+download_hash() {
+    HASH_URL=${GITHUB_URL}/download/${VERSION_K3S}/sha256sum-${ARCH}.txt
+    info "Downloading hash ${HASH_URL}"
+    download ${TMP_HASH} ${HASH_URL}
+    HASH_EXPECTED=$(grep " k3s${SUFFIX}$" ${TMP_HASH})
+    HASH_EXPECTED=${HASH_EXPECTED%%[[:blank:]]*}
+}
+
+# --- check hash against installed version ---
+installed_hash_matches() {
+    if [ -x ${BIN_DIR}/k3s ]; then
+        HASH_INSTALLED=$(sha256sum ${BIN_DIR}/k3s)
+        HASH_INSTALLED=${HASH_INSTALLED%%[[:blank:]]*}
+        if [ "${HASH_EXPECTED}" = "${HASH_INSTALLED}" ]; then
+            return
+        fi
+    fi
+    return 1
+}
+
+# --- download binary from github url ---
+download_binary() {
+    BIN_URL=${GITHUB_URL}/download/${VERSION_K3S}/k3s${SUFFIX}
+    info "Downloading binary ${BIN_URL}"
+    download ${TMP_BIN} ${BIN_URL}
+}
+
+# --- verify downloaded binary hash ---
+verify_binary() {
+    info "Verifying binary download"
+    HASH_BIN=$(sha256sum ${TMP_BIN})
+    HASH_BIN=${HASH_BIN%%[[:blank:]]*}
+    if [ "${HASH_EXPECTED}" != "${HASH_BIN}" ]; then
+        fatal "Download sha256 does not match ${HASH_EXPECTED}, got ${HASH_BIN}"
+    fi
+}
+
+# --- setup permissions and move binary to system directory ---
+setup_binary() {
+    chmod 755 ${TMP_BIN}
+    info "Installing k3s to ${BIN_DIR}/k3s"
+    chown root:root ${TMP_BIN}
+    mv -f ${TMP_BIN} ${BIN_DIR}/k3s
+
+    if command -v getenforce > /dev/null 2>&1; then
+        if [ "Disabled" != $(getenforce) ]; then
+            if command -v semanage > /dev/null 2>&1; then
+                info 'SELinux is enabled, setting permissions'
+                if ! semanage fcontext -l | grep "${BIN_DIR}/k3s" > /dev/null 2>&1; then
+                    semanage fcontext -a -t bin_t "${BIN_DIR}/k3s"
+                fi
+                restorecon -v ${BIN_DIR}/k3s > /dev/null
+            else
+                fatal 'SELinux is enabled but semanage is not found'
+            fi
+        fi
+    fi
+}
+
+# --- download and verify k3s ---
+download_and_verify() {
+    setup_tmp
+    
+    info "Finding latest release"
+    VERSION_K3S=$(curl -w '%{url_effective}' -I -L -s -S ${GITHUB_URL}/latest -o /dev/null | sed -e 's|.*/||')
+    info "Using ${VERSION_K3S} as release"
+
+    download_hash
+
+    if installed_hash_matches; then
+        info 'Skipping binary downloaded, installed k3s matches hash'
+        return
+    fi
+
+    download_binary
+    verify_binary
+    setup_binary
+}
+
+# --- add additional utility links ---
+create_symlinks() {
+    info 'Run create_symlinks()'
+    [ "${INSTALL_K3S_BIN_DIR_READ_ONLY}" = true ] && return
+    [ "${INSTALL_K3S_SYMLINK}" = skip ] && return
+
+    for cmd in kubectl crictl ctr; do
+        if [ ! -e ${BIN_DIR}/${cmd} ] || [ "${INSTALL_K3S_SYMLINK}" = force ]; then
+            which_cmd=$(which ${cmd} || true)
+            if [ -z "${which_cmd}" ] || [ "${INSTALL_K3S_SYMLINK}" = force ]; then
+                info "Creating ${BIN_DIR}/${cmd} symlink to k3s"
+                ln -sf k3s ${BIN_DIR}/${cmd}
+            else
+                info "Skipping ${BIN_DIR}/${cmd} symlink to k3s, command exists in PATH at ${which_cmd}"
+            fi
+        else
+            info "Skipping ${BIN_DIR}/${cmd} symlink to k3s, already exists"
+        fi
+    done
+    info 'End create_symlinks()'
+}
+
+# --- create killall script ---
+create_killall() {
+    [ "${INSTALL_K3S_BIN_DIR_READ_ONLY}" = true ] && return
+    info "Creating killall script ${BIN_DIR}/${KILLALL_K3S_SH}"
+    tee ${BIN_DIR}/${KILLALL_K3S_SH} >/dev/null << \EOF
+#!/bin/sh
+set -x
+[ $(id -u) -eq 0 ] || exec sudo $0 $@
+
+for bin in /var/lib/rancher/k3s/data/**/bin/; do
+    [ -d $bin ] && export PATH=$bin:$PATH
+done
+
+for service in /etc/systemd/system/k3s*.service; do
+    [ -s $service ] && systemctl stop $(basename $service)
+done
+
+for service in /etc/init.d/k3s*; do
+    [ -x $service ] && $service stop
+done
+
+pstree() {
+    for pid in $@; do
+        echo $pid
+        # Find and show pstree for child processes of $pid
+        ps -o ppid= -o pid= | while read parent child; do
+            [ $parent -ne $pid ] || pstree $child
+        done
+    done
+}
+
+killtree() {
+    kill -9 $({ set +x; } 2>/dev/null; pstree $@; set -x) 2>/dev/null
+}
+
+getshims() {
+    lsof | sed -e 's/^[^0-9]*//g; s/  */\t/g' | grep -w 'k3s/data/[^/]*/bin/containerd-shim' | cut -f1 | sort -n -u
+}
+
+killtree $({ set +x; } 2>/dev/null; getshims; set -x)
+
+do_unmount() {
+    { set +x; } 2>/dev/null
+    MOUNTS=
+    while read ignore mount ignore; do
+        MOUNTS="$mount\n$MOUNTS"
+    done </proc/self/mounts
+    MOUNTS=$(printf $MOUNTS | grep "^$1" | sort -r)
+    if [ -n "${MOUNTS}" ]; then
+        set -x
+        umount ${MOUNTS}
+    else
+        set -x
+    fi
+}
+
+do_unmount '/run/k3s'
+do_unmount '/var/lib/rancher/k3s'
+do_unmount '/var/lib/kubelet/pods'
+do_unmount '/run/netns/cni-'
+
+# Delete network interface(s) that match 'master cni0'
+ip link show 2>/dev/null | grep 'master cni0' | while read ignore iface ignore; do
+    iface=${iface%%@*}
+    [ -z "$iface" ] || ip link delete $iface
+done
+ip link delete cni0
+ip link delete flannel.1
+rm -rf /var/lib/cni/
+EOF
+    chmod 755 ${BIN_DIR}/${KILLALL_K3S_SH}
+    chown root:root ${BIN_DIR}/${KILLALL_K3S_SH}
+}
+
+# --- disable current service if loaded --
+systemd_disable() {
+    rm -f /etc/systemd/system/${SERVICE_K3S} || true
+    rm -f /etc/systemd/system/${SERVICE_K3S}.env || true
+    systemctl disable ${SYSTEM_NAME} >/dev/null 2>&1 || true
+}
+
+# --- capture current env and create file containing k3s_ variables ---
+create_env_file() {
+    info "env: Creating environment file ${FILE_K3S_ENV}"
+    UMASK=$(umask)
+    umask 0377
+    env | grep '^K3S_' | tee ${FILE_K3S_ENV} >/dev/null
+    umask $UMASK
+}
+
+# --- write systemd service file ---
+create_systemd_service_file() {
+    info "systemd: Creating service file ${FILE_K3S_SERVICE}"
+    tee ${FILE_K3S_SERVICE} >/dev/null << EOF
+[Unit]
+Description=Lightweight Kubernetes
+Documentation=https://k3s.io
+After=network-online.target
+
+[Service]
+Type=${SYSTEMD_TYPE}
+EnvironmentFile=${FILE_K3S_ENV}
+ExecStartPre=-/sbin/modprobe br_netfilter
+ExecStartPre=-/sbin/modprobe overlay
+ExecStart=${BIN_DIR}/k3s \\
+    ${CMD_K3S_EXEC}
+
+KillMode=process
+Delegate=yes
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+# --- get hashes of the current k3s bin and service files
+get_installed_hashes() {
+    sha256sum ${BIN_DIR}/k3s ${FILE_K3S_SERVICE} ${FILE_K3S_ENV} 2>&1 || true
+}
+
+# --- enable and start systemd service ---
+systemd_enable() {
+    info "systemd: Enabling ${SYSTEM_NAME} unit"
+    systemctl enable ${FILE_K3S_SERVICE} >/dev/null
+    systemctl daemon-reload >/dev/null
+}
+
+systemd_start() {
+    info "systemd: Starting ${SYSTEM_NAME}"
+    systemctl restart ${SYSTEM_NAME}
+}
+
+# --- startup systemd or openrc service ---
+service_enable_and_start() {
+    info 'Run service_enable_and_start()'
+    systemd_enable
+    [ "${INSTALL_K3S_SKIP_START}" = true ] && return
+
+    POST_INSTALL_HASHES=$(get_installed_hashes)
+    if [ "${PRE_INSTALL_HASHES}" = "${POST_INSTALL_HASHES}" ]; then
+        info 'No change detected so skipping service start'
+        return
+    fi
+
+    systemd_start
+    info 'End service_enable_and_start()'
+    return 0
+}
+
+# --- re-evaluate args to include env command ---
+eval set -- $(escape "${INSTALL_K3S_EXEC}") $(quote "$@")
+
+# --- run the install process --
+{
+    setup_env "$@"
+    download_and_verify
+    create_symlinks
+    create_killall
+    create_uninstall
+    systemd_disable
+    create_env_file
+    create_systemd_service_file
+    service_enable_and_start
+}
+
+echo "End of k3s.chroot"
+set +x
