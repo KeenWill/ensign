@@ -10,7 +10,7 @@ Coming soon.
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
-Copyright 2019 William Goeller
+Copyright 2020 William Goeller
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
